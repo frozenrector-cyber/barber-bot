@@ -6,17 +6,24 @@ import time
 import requests
 import sys
 
+# 🔑 ВСТАВЬ СВОЙ ТОКЕН
 TELEGRAM_TOKEN = "8619557470:AAG8jcWkvTB-mfEa8XEnpO9UpEG5h-n3-ew"
 CHAT_ID = "148234032"
 
 URL = "https://b353848.alteg.io/company/337850/personal/select-time?o=m991638"
 
+# 📅 нужные даты (дни месяца)
 TARGET_DATES = ["15", "16", "17", "18", "19", "20"]
 
+# ⏱ интервал проверки (сек)
+CHECK_INTERVAL = 300  # 5 минут
+
+
+# ---------- УТИЛИТЫ ----------
 
 def log(text):
     print(text)
-    sys.stdout.flush()  # 👈 ключ к логам
+    sys.stdout.flush()
 
 
 def send_telegram(text):
@@ -29,6 +36,8 @@ def send_telegram(text):
     except Exception as e:
         log(f"Ошибка Telegram: {e}")
 
+
+# ---------- SELENIUM ----------
 
 def create_driver():
     options = Options()
@@ -47,13 +56,16 @@ def open_page(driver):
     time.sleep(8)
 
 
-def check(driver):
+# ---------- ЛОГИКА ----------
+
+def check_slots(driver):
     try:
         buttons = driver.find_elements(By.TAG_NAME, "button")
 
         for btn in buttons:
             text = btn.text.strip()
 
+            # ищем нужные даты
             if text in TARGET_DATES:
                 try:
                     btn.click()
@@ -74,27 +86,36 @@ def check(driver):
     return None
 
 
-# 🚀 запуск
+# ---------- ЗАПУСК ----------
+
 driver = create_driver()
 open_page(driver)
 
 log("Бот запущен ✅")
 send_telegram("🤖 Бот запущен и работает")
 
+last_found = None  # чтобы не спамить
+
+
+# ---------- ОСНОВНОЙ ЦИКЛ ----------
 
 while True:
     log(f"ЖИВ: {time.strftime('%H:%M:%S')}")
     log("Проверяю...")
 
     try:
-        result = check(driver)
+        result = check_slots(driver)
 
         if result:
-            log(f"НАЙДЕНО: {result}")
-            send_telegram(f"🔥 Есть слот: {result}")
-            break
+            if result != last_found:
+                last_found = result
+                log(f"🔥 НАЙДЕНО: {result}")
+                send_telegram(f"🔥 Есть слот: {result}")
+            else:
+                log("Слот уже отправляли")
 
-        log("Пока нет...")
+        else:
+            log("Пока нет...")
 
     except Exception as e:
         log(f"Ошибка цикла: {e}")
@@ -108,6 +129,7 @@ while True:
         driver = create_driver()
         open_page(driver)
 
+    # обновляем страницу
     try:
         driver.refresh()
     except:
@@ -115,5 +137,4 @@ while True:
 
     log("Обновил страницу\n")
 
-    # ⏱ пока тест — 30 секунд
-    time.sleep(300)
+    time.sleep(CHECK_INTERVAL)
