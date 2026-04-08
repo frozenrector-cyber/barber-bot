@@ -1,9 +1,11 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 import time
 import requests
 
+# 🔑 ВСТАВЬ СВОЙ ТОКЕН
 TELEGRAM_TOKEN = "8619557470:AAG8jcWkvTB-mfEa8XEnpO9UpEG5h-n3-ew"
 CHAT_ID = "148234032"
 
@@ -30,7 +32,9 @@ def create_driver():
     options.add_argument("--disable-dev-shm-usage")
     options.binary_location = "/usr/bin/chromium"
 
-    return webdriver.Chrome(options=options)
+    service = Service("/usr/bin/chromedriver")
+
+    return webdriver.Chrome(service=service, options=options)
 
 
 driver = create_driver()
@@ -81,7 +85,7 @@ while True:
     except Exception as e:
         print("Ошибка цикла:", e)
 
-        # если браузер умер — пересоздаём
+        # перезапуск браузера если упал
         try:
             driver.quit()
         except:
