@@ -1,13 +1,9 @@
 import requests
 import time
 
-# 🔑 ТВОЙ ТОКЕН
 TELEGRAM_TOKEN = "8619557470:AAG8jcWkvTB-mfEa8XEnpO9UpEG5h-n3-ew"
-
-# 👇 твой chat_id
 CHAT_ID = "148234032"
 
-# 📅 нужные даты
 DATES = [
     "2026-04-15",
     "2026-04-16",
@@ -17,7 +13,6 @@ DATES = [
     "2026-04-20",
 ]
 
-# 🔗 API Altegio
 URL = "https://b353848.alteg.io/timeslots"
 
 
@@ -28,10 +23,11 @@ def send_telegram(text):
             params={
                 "chat_id": CHAT_ID,
                 "text": text
-            }
+            },
+            timeout=10
         )
     except Exception as e:
-        print("Ошибка отправки в Telegram:", e)
+        print("Ошибка Telegram:", e)
 
 
 def check_date(date):
@@ -61,13 +57,20 @@ def check_date(date):
             json=payload,
             headers={
                 "User-Agent": "Mozilla/5.0",
-                "Content-Type": "application/json"
-            }
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Origin": "https://b353848.alteg.io",
+                "Referer": "https://b353848.alteg.io/",
+            },
+            timeout=10
         )
 
-        # если сервер ответил ошибкой
         if response.status_code != 200:
             print(f"{date} → ошибка ответа:", response.status_code)
+            return []
+
+        if not response.text.strip():
+            print(f"{date} → пустой ответ")
             return []
 
         data = response.json()
@@ -89,7 +92,6 @@ def check_date(date):
     return found
 
 
-# 🔁 основной цикл
 while True:
     print("Проверяю даты...\n")
 
@@ -104,5 +106,4 @@ while True:
 
     print("Пока нет нужных дат...\n")
 
-    # ⏱ каждые 5 минут
     time.sleep(300)
