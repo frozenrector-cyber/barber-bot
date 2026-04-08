@@ -116,4 +116,4 @@ while True:
     log("Обновил страницу\n")
 
     # ⏱ пока тест — 30 секунд
-    time.sleep(30)
+    time.sleep(300)
