@@ -95,5 +95,5 @@ while True:
         driver.get(URL)
         time.sleep(10)
 
-    time.sleep(300)
+    time.sleep(30)
     driver.refresh()
