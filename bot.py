@@ -4,14 +4,19 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 import time
 import requests
+import sys
 
-# 🔑 ВСТАВЬ СВОЙ ТОКЕН
 TELEGRAM_TOKEN = "8619557470:AAG8jcWkvTB-mfEa8XEnpO9UpEG5h-n3-ew"
 CHAT_ID = "148234032"
 
 URL = "https://b353848.alteg.io/company/337850/personal/select-time?o=m991638"
 
 TARGET_DATES = ["15", "16", "17", "18", "19", "20"]
+
+
+def log(text):
+    print(text)
+    sys.stdout.flush()  # 👈 ключ к логам
 
 
 def send_telegram(text):
@@ -22,7 +27,7 @@ def send_telegram(text):
             timeout=10
         )
     except Exception as e:
-        print("Ошибка Telegram:", e)
+        log(f"Ошибка Telegram: {e}")
 
 
 def create_driver():
@@ -61,10 +66,10 @@ def check(driver):
                             return f"{text} апреля: {t.text}"
 
                 except Exception as e:
-                    print("Ошибка клика:", e)
+                    log(f"Ошибка клика: {e}")
 
     except Exception as e:
-        print("Ошибка поиска:", e)
+        log(f"Ошибка поиска: {e}")
 
     return None
 
@@ -73,43 +78,42 @@ def check(driver):
 driver = create_driver()
 open_page(driver)
 
-print("Бот запущен ✅")
-
-# уведомление что бот жив
+log("Бот запущен ✅")
 send_telegram("🤖 Бот запущен и работает")
 
+
 while True:
-    print("Проверяю...", time.strftime("%H:%M:%S"))
+    log(f"ЖИВ: {time.strftime('%H:%M:%S')}")
+    log("Проверяю...")
 
     try:
         result = check(driver)
 
         if result:
-            print("НАЙДЕНО:", result)
+            log(f"НАЙДЕНО: {result}")
             send_telegram(f"🔥 Есть слот: {result}")
             break
 
-        print("Пока нет...")
+        log("Пока нет...")
 
     except Exception as e:
-        print("Ошибка цикла:", e)
+        log(f"Ошибка цикла: {e}")
 
         try:
             driver.quit()
         except:
             pass
 
-        print("Перезапускаю браузер...")
+        log("Перезапускаю браузер...")
         driver = create_driver()
         open_page(driver)
 
-    # обновляем страницу
     try:
         driver.refresh()
     except:
         pass
 
-    print("Обновил страницу\n")
+    log("Обновил страницу\n")
 
-    # ⏱ каждые 60 секунд (для теста)
-    time.sleep(60)
+    # ⏱ пока тест — 30 секунд
+    time.sleep(30)
