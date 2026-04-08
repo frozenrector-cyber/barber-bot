@@ -27,7 +27,7 @@ def send_telegram(text):
 
 def create_driver():
     options = Options()
-    options.add_argument("--headless")
+    options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.binary_location = "/usr/bin/chromium"
@@ -37,12 +37,12 @@ def create_driver():
     return webdriver.Chrome(service=service, options=options)
 
 
-driver = create_driver()
-driver.get(URL)
-time.sleep(10)
+def open_page(driver):
+    driver.get(URL)
+    time.sleep(8)
 
 
-def check():
+def check(driver):
     try:
         buttons = driver.find_elements(By.TAG_NAME, "button")
 
@@ -69,11 +69,20 @@ def check():
     return None
 
 
+# 🚀 запуск
+driver = create_driver()
+open_page(driver)
+
+print("Бот запущен ✅")
+
+# уведомление что бот жив
+send_telegram("🤖 Бот запущен и работает")
+
 while True:
-    print("Проверяю...")
+    print("Проверяю...", time.strftime("%H:%M:%S"))
 
     try:
-        result = check()
+        result = check(driver)
 
         if result:
             print("НАЙДЕНО:", result)
@@ -85,15 +94,22 @@ while True:
     except Exception as e:
         print("Ошибка цикла:", e)
 
-        # перезапуск браузера если упал
         try:
             driver.quit()
         except:
             pass
 
+        print("Перезапускаю браузер...")
         driver = create_driver()
-        driver.get(URL)
-        time.sleep(10)
+        open_page(driver)
 
-    time.sleep(30)
-    driver.refresh()
+    # обновляем страницу
+    try:
+        driver.refresh()
+    except:
+        pass
+
+    print("Обновил страницу\n")
+
+    # ⏱ каждые 60 секунд (для теста)
+    time.sleep(60)
