@@ -1,10 +1,10 @@
 import requests
 import time
 
-# 🔑 ВСТАВЬ СВОЙ ТОКЕН
+# 🔑 ТВОЙ ТОКЕН
 TELEGRAM_TOKEN = "8619557470:AAG8jcWkvTB-mfEa8XEnpO9UpEG5h-n3-ew"
 
-# 👇 твой chat_id (мы уже нашли)
+# 👇 твой chat_id
 CHAT_ID = "148234032"
 
 # 📅 нужные даты
@@ -22,13 +22,16 @@ URL = "https://b353848.alteg.io/timeslots"
 
 
 def send_telegram(text):
-    requests.get(
-        f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
-        params={
-            "chat_id": CHAT_ID,
-            "text": text
-        }
-    )
+    try:
+        requests.get(
+            f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
+            params={
+                "chat_id": CHAT_ID,
+                "text": text
+            }
+        )
+    except Exception as e:
+        print("Ошибка отправки в Telegram:", e)
 
 
 def check_date(date):
@@ -47,30 +50,48 @@ def check_date(date):
                         "type": "service"
                     }
                 ],
-                "staff_id": 991638  # 👈 ЭТО ТВОЙ БАРБЕР
+                "staff_id": 991638
             }
         ]
     }
 
-    response = requests.post(URL, json=payload)
-    data = response.json()
+    try:
+        response = requests.post(
+            URL,
+            json=payload,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Content-Type": "application/json"
+            }
+        )
 
-    print(f"Ответ для {date}:", data)  # 👈 чтобы видеть что происходит
+        # если сервер ответил ошибкой
+        if response.status_code != 200:
+            print(f"{date} → ошибка ответа:", response.status_code)
+            return []
+
+        data = response.json()
+
+    except Exception as e:
+        print(f"{date} → ошибка запроса:", e)
+        return []
 
     found = []
 
     for slot in data.get("data", []):
         attrs = slot["attributes"]
 
-        if attrs["is_bookable"]:
+        if attrs.get("is_bookable"):
             found.append(attrs["time"])
+
+    print(f"{date} → найдено:", found)
 
     return found
 
 
 # 🔁 основной цикл
 while True:
-    print("Проверяю даты...")
+    print("Проверяю даты...\n")
 
     for date in DATES:
         slots = check_date(date)
@@ -82,4 +103,6 @@ while True:
             exit()
 
     print("Пока нет нужных дат...\n")
-    time.sleep(30)
+
+    # ⏱ каждые 5 минут
+    time.sleep(300)
