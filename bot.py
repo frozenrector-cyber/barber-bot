@@ -13,43 +13,54 @@ TARGET_DATES = ["15", "16", "17", "18", "19", "20"]
 
 
 def send_telegram(text):
-    requests.get(
-        f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
-        params={"chat_id": CHAT_ID, "text": text}
-    )
+    try:
+        requests.get(
+            f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
+            params={"chat_id": CHAT_ID, "text": text},
+            timeout=10
+        )
+    except Exception as e:
+        print("Ошибка Telegram:", e)
 
 
-options = Options()
-options.add_argument("--headless")
-options.add_argument("--no-sandbox")
-options.add_argument("--disable-dev-shm-usage")
+def create_driver():
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.binary_location = "/usr/bin/chromium"
 
-driver = webdriver.Chrome(options=options)
+    return webdriver.Chrome(options=options)
 
+
+driver = create_driver()
 driver.get(URL)
 time.sleep(10)
 
 
 def check():
-    buttons = driver.find_elements(By.TAG_NAME, "button")
+    try:
+        buttons = driver.find_elements(By.TAG_NAME, "button")
 
-    for btn in buttons:
-        text = btn.text.strip()
+        for btn in buttons:
+            text = btn.text.strip()
 
-        # ищем даты
-        if text in TARGET_DATES:
-            try:
-                btn.click()
-                time.sleep(2)
+            if text in TARGET_DATES:
+                try:
+                    btn.click()
+                    time.sleep(2)
 
-                times = driver.find_elements(By.TAG_NAME, "button")
+                    times = driver.find_elements(By.TAG_NAME, "button")
 
-                for t in times:
-                    if ":" in t.text:
-                        return f"{text} апреля: {t.text}"
+                    for t in times:
+                        if ":" in t.text:
+                            return f"{text} апреля: {t.text}"
 
-            except:
-                pass
+                except Exception as e:
+                    print("Ошибка клика:", e)
+
+    except Exception as e:
+        print("Ошибка поиска:", e)
 
     return None
 
@@ -57,11 +68,28 @@ def check():
 while True:
     print("Проверяю...")
 
-    result = check()
+    try:
+        result = check()
 
-    if result:
-        send_telegram(f"🔥 Есть слот: {result}")
-        break
+        if result:
+            print("НАЙДЕНО:", result)
+            send_telegram(f"🔥 Есть слот: {result}")
+            break
+
+        print("Пока нет...")
+
+    except Exception as e:
+        print("Ошибка цикла:", e)
+
+        # если браузер умер — пересоздаём
+        try:
+            driver.quit()
+        except:
+            pass
+
+        driver = create_driver()
+        driver.get(URL)
+        time.sleep(10)
 
     time.sleep(300)
     driver.refresh()
